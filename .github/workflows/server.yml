@@ -1,28 +1,33 @@
-<!DOCTYPE html>
-<html>
+name: super007-test-server
 
-<head>
-<title>Super007 Test</title>
-</head>
+on:
+  workflow_dispatch:
 
-<body>
+jobs:
+  server:
+    runs-on: ubuntu-latest
 
-<h1>Super007 Test Site</h1>
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-<button onclick="increase()">Click me</button>
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
 
-<p>Count: <span id="count">0</span></p>
+      - name: Install dependencies
+        run: npm install
 
-<script>
+      - name: Install cloudflared
+        run: |
+          wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared-linux-amd64
+          sudo mv cloudflared-linux-amd64 /usr/local/bin/cloudflared
 
-async function increase(){
-  const res = await fetch("/count");
-  const data = await res.json();
-  document.getElementById("count").innerText = data.count;
-}
+      - name: Start server
+        run: node server.js &
 
-</script>
-
-</body>
-
-</html>
+      - name: Start Cloudflare Tunnel
+        run: |
+          cloudflared tunnel --no-autoupdate run --token ${{ secrets.CF_TUNNEL_TOKEN }}
