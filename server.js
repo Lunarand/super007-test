@@ -1,35 +1,15 @@
-name: super007-test-server
+const express = require("express");
+const app = express();
 
-on:
-  workflow_dispatch:
+let count = 0;
 
-jobs:
-  server:
-    runs-on: ubuntu-latest
+app.use(express.static("public"));
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+app.get("/count", (req,res)=>{
+  count++;
+  res.json({count});
+});
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Install cloudflared
-        run: |
-          wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
-          chmod +x cloudflared-linux-amd64
-          sudo mv cloudflared-linux-amd64 /usr/local/bin/cloudflared
-
-      - name: Start test server
-        run: |
-          node server.js &
-          sleep 5
-
-      - name: Start Cloudflare Tunnel
-        run: |
-          cloudflared tunnel --no-autoupdate --url http://localhost:8080 run --token ${{ secrets.CF_TUNNEL_TOKEN }}
+app.listen(8080, ()=>{
+  console.log("Server running on port 8080");
+});
